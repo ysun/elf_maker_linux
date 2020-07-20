@@ -26,9 +26,15 @@ elf_file_t *elf_maker_init()
   header.e_type = ET_EXEC;                  /* Object file type (executable binary) */
   header.e_machine = EM_X86_64;               /* instruction set (x86 for now) */
   header.e_version = EV_CURRENT;           /* elf header version (current = 1) */
-  header.e_ehsize = sizeof(elf_header_t);  /* size of the elf header */
+
+  // This is only for execuable file!!!
+  header.e_entry = 0x400000;
+
   header.e_phoff= ELF_HEADER_SIZE;        /* program headers offset, following by ELF header */
-  header.e_shentsize = sizeof(Elf64_Shdr); /* size of entry in the section header table */
+
+  header.e_ehsize = ELF_HEADER_SIZE;       /* size of the elf header */
+  header.e_phentsize = ELF_PROGREAM_HEADER_SIZE;       /* size of the elf header */
+  header.e_shentsize = ELF_SECTION_HEADER_SIZE; /* size of entry in the section header table */
 
   /* add the elf header to the elf file */
   elf_file_t *file = (elf_file_t *)malloc(sizeof(elf_file_t));
@@ -52,11 +58,21 @@ int _get_program_header_offset (elf_file_t *elf_file) {
 
 
 int _get_string_table_offset (elf_file_t *elf_file) {
-  int pos = 0;
+  int pos = 0, cnt_prog_header = 0;
   pos += _get_program_header_offset(elf_file);
 
-  SLLInfo *seg_info = (SLLInfo*)elf_file->list_segments->data;
-  pos += seg_info->size * ELF_PROGREAM_HEADER_SIZE;
+  SLL *seg_iter = elf_file->list_segments->next;
+  while (seg_iter)
+  {
+    elf_segment_t* p_segment= (elf_segment_t*)seg_iter->data;
+
+    if(p_segment->has_program)
+        cnt_prog_header ++;
+
+    seg_iter = seg_iter->next;
+  }
+
+  pos += cnt_prog_header * ELF_PROGREAM_HEADER_SIZE;
 
   return pos;
 }
@@ -142,6 +158,9 @@ void elf_maker_write(elf_file_t *elf_file, FILE *output)
   elf_file->header.e_phoff = _get_program_header_offset(elf_file);
   elf_file->header.e_shoff = _get_section_offset(elf_file);
 
+  elf_file->header.e_entry += _get_code_offset(elf_file);
+  elf_file->header.e_shstrndx = _get_string_table_section_index(elf_file);
+
 
   /* fill in section */
   SLLNode *header_iter = elf_file->list_segments->next;
@@ -149,28 +168,34 @@ void elf_maker_write(elf_file_t *elf_file, FILE *output)
   {
     elf_segment_t* p_segment = (elf_segment_t*)header_iter->data;
     p_segment->section_header.sh_name = string_offset;
-    string_offset += strlen(p_segment->name_string)+1;
 
-    if(p_segment->has_program)
-        program_code_offset += p_segment->program_code.size;
+    if(strcmp(p_segment->name_string, "") != 0) {
+      string_offset += strlen(p_segment->name_string)+1;
 
-    if(strcmp(p_segment->name_string, ".shstrab") == 0){
-        p_segment->section_header.sh_type = 3;
-        p_segment->section_header.sh_flags = 0;
-        p_segment->section_header.sh_size = _get_string_table_lenth(elf_file);
+      if(p_segment->has_program)
+          program_code_offset += p_segment->program_code.size;
+
+      if(strcmp(p_segment->name_string, ".shstrab") == 0){
+          p_segment->section_header.sh_type = 3;
+          p_segment->section_header.sh_flags = 0;
+          p_segment->section_header.sh_offset = _get_string_table_offset(elf_file);
+          p_segment->section_header.sh_size = _get_string_table_lenth(elf_file);
+          printf("ysun: _get_string_table_offset: %ld, lenth: %ld\n", 
+                 p_segment->section_header.sh_size, p_segment->section_header.sh_size);
+      }
+      if(strcmp(p_segment->name_string, ".text") == 0) {
+          p_segment->section_header.sh_type = 1;
+          p_segment->section_header.sh_flags = 6;
+
+          /* 可能这个地方不需要加offset，直接把地址写给program_header.p_vaddr就好*/
+          p_segment->section_header.sh_addr = p_segment->program_header.p_vaddr + program_code_offset;
+          p_segment->section_header.sh_offset = program_code_offset;
+          p_segment->section_header.sh_size = p_segment->program_code.size;
+      }
+      p_segment->section_header.sh_addralign = 1;
+
+      printf("ysun: go througn string_name, string_offset:%d\n", string_offset);
     }
-    if(strcmp(p_segment->name_string, ".text") == 0) {
-        p_segment->section_header.sh_type = 1;
-        p_segment->section_header.sh_flags = 6;
-
-        /* 可能这个地方不需要加offset，直接把地址写给program_header.p_vaddr就好*/
-        p_segment->section_header.sh_addr = p_segment->program_header.p_vaddr ; //+ program_code_offset;
-        p_segment->section_header.sh_size = p_segment->program_code.size;
-    }
-    p_segment->section_header.sh_addralign = 1;
-
-    printf("ysun: go througn string_name, string_offset:%d\n", string_offset);
-
     header_iter= header_iter->next;
   }
 
@@ -184,13 +209,14 @@ void elf_maker_write(elf_file_t *elf_file, FILE *output)
   while (header_iter)
   {
     elf_segment_t* p_segment = (elf_segment_t*)header_iter->data;
-    printf("ysun: program_header:\n");
-//    for(int i= 0; i < ELF_PROGREAM_HEADER_SIZE; i++)
-//        printf("%2x ", *((int *)&(p_segment->program_header)+i));
-
-    cur_pos += fwrite((void*)&(p_segment->program_header), 1, ELF_PROGREAM_HEADER_SIZE, output);
-    printf("ysun: after write program_header, cur_pos:%ld/%d\n", ftell(output), cur_pos);
-
+    if(p_segment->has_program) {
+      printf("ysun: program_header:\n");
+  //    for(int i= 0; i < ELF_PROGREAM_HEADER_SIZE; i++)
+  //        printf("%2x ", *((int *)&(p_segment->program_header)+i));
+  
+      cur_pos += fwrite((void*)&(p_segment->program_header), 1, ELF_PROGREAM_HEADER_SIZE, output);
+      printf("ysun: after write program_header, cur_pos:%ld/%d\n", ftell(output), cur_pos);
+    }
     header_iter= header_iter->next;
   }
 
@@ -219,7 +245,10 @@ void elf_maker_write(elf_file_t *elf_file, FILE *output)
 //  char buf_null_secton[64] = {0};
 //  cur_pos += fwrite(buf_null_secton, 1, 64, output);
 //  printf("ysun: after write NULL section, cur_pos:%ld/%d\n", ftell(output), cur_pos);
- 
+
+  elf_segment_t* p_segment = (elf_segment_t*)header_iter->data;
+  memset(&p_segment->section_header, 0, ELF_SECTION_HEADER_SIZE);
+
   while (header_iter)
   {
     elf_segment_t* p_segment = (elf_segment_t*)header_iter->data;
@@ -278,7 +307,7 @@ elf_maker_add_segment(elf_file_t *elf_file, char name[])
 
     segment->name_string[len] = '\0';
     
-    if(strcmp(name, ".shstrab") != 0)
+    if(strcmp(name, ".shstrab") != 0 && strcmp(name,"\0") != 0)
         segment->has_program = 1;
   }
 
