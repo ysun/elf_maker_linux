@@ -48,13 +48,8 @@ extern elf_file_t *elf_maker_init();
 extern elf_program_header_t* elf_maker_add_empty_prom_header(elf_file_t *elf_file);
 extern elf_segment_t *elf_maker_add_segment(elf_file_t *elf_file, char name[]);
 extern int elf_maker_add_prog_code(elf_file_t *elf_file);
-//extern elf_section_entry_t *elf_maker_add_section_entry(elf_section_t *section, void *data, size_t size);
 extern void elf_maker_write(elf_file_t *elf_file, FILE *output);
-//extern void elf_maker_free(elf_file_t *elf_file);
 
 /** Private Functions **/
-//extern void _elf_maker_section_free(elf_section_t *section);
-//extern void _elf_maker_section_entry_free(elf_section_entry_t *section);
-//extern void _elf_maker_prepare_for_writing(elf_file_t *elf_file);
 
 #endif
