@@ -1,12 +1,4 @@
-/** Includes **/
 #include "elf_maker.h"
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-
-#define ELF_HEADER_SIZE 0x40
-#define ELF_PROGREAM_HEADER_SIZE 0x38
-#define ELF_SECTION_HEADER_SIZE 0x40
 
 /** Public Functions **/
 elf_file_t *elf_maker_init()
@@ -298,8 +290,7 @@ void elf_maker_write(elf_file_t *elf_file, FILE *output)
   elf_segment_t* p_segment = (elf_segment_t*)header_iter->data;
   memset(&p_segment->section_header, 0, ELF_SECTION_HEADER_SIZE);
 
-  while (header_iter)
-  {
+  while (header_iter) {
     elf_segment_t* p_segment = (elf_segment_t*)header_iter->data;
     cur_pos += fwrite(&p_segment->section_header, 1, sizeof(elf_section_header_t), output);
     header_iter= header_iter->next;
@@ -307,20 +298,19 @@ void elf_maker_write(elf_file_t *elf_file, FILE *output)
 
   fclose(output);
 
-  printf("ELF header offset: %x\n", 0);
-  printf("    ELF header size: %d\n", ELF_HEADER_SIZE);
+  printf("\nGenerated ELF file(out_bin) overlay:\n");
+  printf("    ELF header offset:    0x%x\n",      0);
+  printf("                 size:    %d bytes\n",      ELF_HEADER_SIZE);
+  printf("Program header offset:    0x%x\n",    _get_program_header_offset(elf_file));
+  printf("           size x num:    %dx%d bytes\n",   ELF_HEADER_SIZE, si_segment_header->size);
+  printf("  String table offset:    0x%x\n",    _get_string_table_offset(elf_file));
+  printf("                 size:    %d bytes\n",      _get_string_table_lenth(elf_file));
+  printf("  Program code offset:    0x%x\n",    _get_code_offset(elf_file));
+  printf("                 size:    %d bytes\n",      _get_code_length(elf_file));
+  printf(" Section table offset:    0x%x\n",    _get_section_offset(elf_file));
+  printf("           size x num:    %dx%d bytes\n", ELF_SECTION_HEADER_SIZE, si_segment_header->size);
 
-  printf("program heaser offset: 0x%x\n", _get_program_header_offset(elf_file));
-  printf("    program header size x num: %d x %d\n", ELF_HEADER_SIZE, si_segment_header->size);
-
-  printf("string name table offset: 0x%x\n", _get_string_table_offset(elf_file));
-  printf("    string name table size: %d\n", _get_string_table_lenth(elf_file));
-
-  printf("program code offset: 0x%x\n", _get_code_offset(elf_file));
-  printf("    program code size: %d\n", _get_code_length(elf_file));
-
-  printf("section table offset: 0x%x\n", _get_section_offset(elf_file));
-  printf("    section size x num: %d x %d\n", ELF_SECTION_HEADER_SIZE, si_segment_header->size);
+  printf("\nRun: chmod a+x ./out_bin; ./out_bin\n");
 }
 
 elf_segment_t*
