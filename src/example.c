@@ -42,15 +42,16 @@ int main()
      exit(1);
    }
 
-   FILE *elfdemo = fopen("elfdemo", "r");
+   FILE *elfdemo = fopen("elfdemo.ori", "r");
    if (!elfdemo)
    {
      fprintf(stderr, "ERORR: couldn't open ELFDEMO file\n");
      exit(1);
    }
-   fseek(elfdemo,0xda, SEEK_SET);
+   fseek(elfdemo,0x78, SEEK_SET);
    unsigned char *buffer = (unsigned char*)malloc(1024);
    int size = fread(buffer, 1, 56, elfdemo); 
+   buffer[17] = 0xb2;
 
    elf_segment_t *p_segment = elf_maker_add_segment(elf_file, ".text");
    elf_program_header_t *prog_header = &p_segment->program_header;
