@@ -296,8 +296,6 @@ void elf_maker_write(elf_file_t *elf_file, FILE *output)
     header_iter= header_iter->next;
   }
 
-  fclose(output);
-
   printf("\nGenerated ELF file(out_bin) overlay:\n");
   printf("    ELF header offset:    0x%x\n",      0);
   printf("                 size:    %d bytes\n",      ELF_HEADER_SIZE);
@@ -336,6 +334,15 @@ elf_maker_add_segment(elf_file_t *elf_file, char name[])
     if(strcmp(name, ".text") == 0)
         segment->has_program = 1;
   }
+
+  segment->program_header.p_type = 1;
+  segment->program_header.p_flags = 5; //executable | readable
+  segment->program_header.p_offset = 0; //不明觉厉
+  segment->program_header.p_vaddr = 0x400000; //临时
+  segment->program_header.p_memsz = 0xb0;   //hello world
+  segment->program_header.p_filesz = 0xb0;   //hello world
+  segment->program_header.p_align = 0x200000; //2M align
+
 
   /* add section to the elf file */
   SLL_insert(elf_file->list_segments, segment);

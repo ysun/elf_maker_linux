@@ -57,21 +57,13 @@ int main()
    elf_program_header_t *prog_header = &p_segment->program_header;
    elf_program_code_t *prog_code = &p_segment->program_code;
 
-   prog_header->p_type = 1;
-   prog_header->p_flags = 5; //executable | readable
-   prog_header->p_offset = 0; //不明觉厉
-   prog_header->p_vaddr = 0x400000; //临时
-   prog_header->p_memsz = 0xB0;   //hello world
-   prog_header->p_filesz = 0xB0;   //hello world
-   prog_header->p_align = 0x200000; //2M align
-
    prog_code->code = buffer;
    prog_code->size = size;
 
    /* write the elf file*/
    elf_maker_write(elf_file, ofile);
 
- /*cleanup */
-//  fclose(ofile);
-//  elf_maker_free(elf_file);
+   /*cleanup */
+   fclose(ofile);
+   elf_maker_free(elf_file);
 }
