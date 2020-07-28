@@ -24,8 +24,8 @@ typedef struct elf_section_t
 {
   char *name;
   elf_section_header_t header;
-  Elf64_Addr vaddr_entry;
   SLL *entries;
+//  Elf64_Addr vaddr_entry;
 } elf_section_t;
 
 /* section entry struct */

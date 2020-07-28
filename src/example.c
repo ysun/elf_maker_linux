@@ -6,7 +6,7 @@ int main()
 {
   /* elf maker init */
   elf_file_t *elf_file = elf_maker_init();
-  elf_file->header.e_entry = 0x10000;
+//  elf_file->header.e_entry = 0x10000;
 
   /* get sections info */
   SLLInfo *sections_info = (SLLInfo *)elf_file->sections->data;

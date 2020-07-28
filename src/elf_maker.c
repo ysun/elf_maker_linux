@@ -1,10 +1,9 @@
-/*************************************************** Includes ********************************************************/
 #include "elf_maker.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-/*********************************************** Public Functions ****************************************************/
+/* Public Functions */
 elf_file_t *elf_maker_init()
 {
   /* init the header */
@@ -56,7 +55,7 @@ elf_section_t *elf_maker_add_section(elf_file_t *elf_file, char *name, Elf64_Add
   }
 
   if(vaddr >= 0)
-      section->vaddr_entry = vaddr;
+      section->header.sh_addr = vaddr;
 
   /* section entries */
   section->entries = SLL_init();
@@ -149,7 +148,7 @@ void elf_maker_free(elf_file_t *elf_file)
   free(elf_file);
   elf_file = NULL;
 }
-/*********************************************** Private Functions ***************************************************/
+/* Private Functions */
 void _elf_maker_prepare_for_writing(elf_file_t *elf_file)
 {
   if (!elf_file)
