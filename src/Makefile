@@ -1,2 +1,5 @@
 all:
-	gcc elf_maker.c example.c -g -o exam
+	gcc *.c && ./a.out && readelf -a output
+
+clean:
+	rm -f a.out output;
