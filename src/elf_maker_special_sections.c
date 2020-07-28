@@ -64,7 +64,7 @@ elf_section_t *add_text_section(elf_file_t *elf_file, elf_section_t *symbol_tabl
   memset(&sym_entry, 0, sizeof(elf_symbol_table_entry_t));
   sym_entry.st_shndx = sections_info->size - 1; /*index of text section*/
   sym_entry.st_info = STB_GLOBAL << 4;          /*TODO(fix this using elf macros):only elf32bit ELF32_ST_BIND(STB_GLOBAL);*/
-  add_symbol_table_entry(symbol_table_section, symbol_table_strings_section, &sym_entry, "_start");
+ // add_symbol_table_entry(symbol_table_section, symbol_table_strings_section, &sym_entry, "_start");
 
   return text_section;
 }
